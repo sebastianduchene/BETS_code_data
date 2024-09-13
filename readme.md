@@ -5,6 +5,7 @@
 - treponema.fasta - sequence alignment for _T. pallidum_ data set.
 - small_simulations* - these folders contain the xml files for simulations under the corresponding prior on the population size parameter of the constant-size coalescent.
 - empirical - contains a subset of xml files generated from the three sequence alignments analysed under the corresponding prior and clock model with and without sampling times.
+- simulate_cholera_like contains code to generate simulations that are cholera like using R.
 
 All analyses were conducted with BEASTv1.10.5 pre-release (now BEASTv10.5.0). No additional packages are required.
 BEAGLE library 4.0.1 is also required.

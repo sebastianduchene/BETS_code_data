@@ -1,31 +1,23 @@
-setwd("~/Dropbox/projects_WORKING/BETS_prior_sensitivity/cholera_simulations_check/")
-
-library(TreeSim)
 library(NELSI)
 library(phangorn)
-
-for(i in 1:10){
-  ntaxa <- 50
+i <- 1 # Change for simulation replicates using a for loop
+ntaxa <- 50
   # For the ultrametric tree
-  tree <- sim.bd.taxa(n = ntaxa, lambda = 0.015, mu = 0.0025, numbsim = 1, complete = F)[[1]]
-  tree
-  # For a heterochronous tree use sim.bdsky.stt:
-    #sim.bdsky.stt(n = 50, lambdasky = 0.06, deathsky = 0.02, sampprobsky = 0.2, timesky = 0)[[1]]
-  tree <- read.tree(text = write.tree(tree))
+  tree <- rcoal(ntaxa)
+  tree$edge.length <- tree$edge.length * 100 # Convert branch lengths for a more realistic population size
   root_height <- max(allnode.times(tree))
   root_height
-  
-  sampling_times <- abs( round(sort( c(0,  rexp(ntaxa-1, 10 / root_height))) - 2009) )
+  # sampling times are drawn from an exponential distro because the time-tree is ultrametric  
+  sampling_times <- abs( round(sort( c(0,  rexp(ntaxa-1, 10 / root_height))) - 2009, 2) )
   sampling_times
   
-  #round(allnode.times(tree, tipsonly = T), 2)
   tree$tip.label <- paste(tree$tip.label, sampling_times, sep = "_")
   
   tree$root.edge 
   plot.tree.lines(tree, plot.new = T, line.type = "l", rotation.angle = 3*pi/2)
   
   # Simulate sampling times
-  clock_rate <-  7e-7 * 2948589 / 5000
+  clock_rate <-  7e-7 * 2948589 / 5000 # Similar site patterns as empirical data
   clock_rate
   
   phylogram <- tree
@@ -35,33 +27,12 @@ for(i in 1:10){
   
   print(root_height)
   print(aln)
+  print('variable sites')
   print(length(seg.sites(aln)))
   print(max(sampling_times) - root_height)
-  
-  write.dna(aln, file = paste0("ultrametric_sample_cock_rate0.0004_sim", i, ".fasta"), format = "fasta", 
+  cat("root height is: ", root_height, "\n")
+  cat("Proportion of sampling times is: ", diff(range(sampling_times)) / root_height, "\n")
+  cat("variable sites", length(seg.sites(aln)), "\n")
+  write.dna(aln, file = paste0("ultrametric_sample_clock_rate0.0004_sim", i, ".fasta"), format = "fasta", 
             nbcol = -1, colsep = "")
-}
-
-###################################
-library(NELSI)
-iqtree_tree <- read.tree("ultrametric_sample_cock_rate0.0004_sim10.fasta.treefile")
-make.lsd.dates(iqtree_tree, random = F)
-
-lsd_command <- "~/phyloApps/lsd-0.3beta/bin/lsd_unix -i ultrametric_sample_cock_rate0.0004_sim10.fasta.treefile -d out.date -r a -c"
-
-system(lsd_command)
-results_correct_rate <- gsub(".+ rate| , tMRCA.+", "",
-                             grep("Tree.+ rate ", readLines("ultrametric_sample_cock_rate0.0004_sim10.fasta.treefile.result"), value = T))
-results_correct_rate <- as.numeric(results_correct_rate)
-
-randomised_rates <- vector()
-for(i in 1:1000){
-  make.lsd.dates(iqtree_tree, random = T)
-  system(lsd_command)
-  results_randomised_rate <- gsub(".+ rate| , tMRCA.+", "",
-                               grep("Tree.+ rate ", readLines("ultrametric_sample_cock_rate0.0004_sim10.fasta.treefile.result"), value = T))
-  randomised_rates[i] <- as.numeric(results_randomised_rate)
-}
-
-hist(randomised_rates, xlim = range(c(randomised_rates, results_correct_rate)), breaks = 50)
-lines(rep(results_correct_date, 2), c(0, 500) , col = 'red', lwd = 5)
+  write.tree(tree, file = paste0("ultrametric_sample_clock_rate0.0004_sim", i, ".tree"))
